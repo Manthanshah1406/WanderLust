@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wanderlust</title>
+</head>
+
+<body>
+    <h1>Listing Details</h1>
+    <ul>
+        <li>
+            <%= List.title %>
+        </li>
+        <li>
+            <%= List.description %>
+        </li>
+        <li>&#8377 
+            <%= List.price %>
+        </li>
+        <li>
+            <%= List.location %>
+        </li>
+        <li>
+            <%= List.country %>
+        </li>
+    </ul>
+    <a href="/listings/<%= List._id %>/edit">Edit</a> <br>
+</body>
+
+</html>
