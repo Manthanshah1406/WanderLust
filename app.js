@@ -2,14 +2,17 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const path = require('path');
-const Listing = require('./models/listing');
+const Listing = require('./models/listing.js');
 const methodOverride = require('method-override');
 const ejsMate = require('ejs-mate');
 const wrapAsync = require('./utils/wrapAsync.js');
 const ExpressError = require('./utils/ExpressError.js');
 const { listingSchema } = require('./schema.js');
+const { reviewSchema } = require('./schema.js');
+const Review = require('./models/review.js');
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(methodOverride('_method'));
@@ -24,10 +27,35 @@ async function main() {
     await mongoose.connect(MONGO_URL)
 }
 
+
 // Home Route
 app.get('/', (req, res) => {
     res.send('Hi,I am Mr.Shah');
-})
+});
+
+const validateListings = (req, res, next) => {
+    console.log("req.body =>", req.body);  // <-- temp debug log
+    let { error } = listingSchema.validate(req.body);
+    // console.log(result);
+    if (error) {
+        throw new ExpressError(400, error.message);
+    }
+    else {
+        next();
+    }
+};
+
+const validateReview = (req, res, next) => {
+    let { error } = reviewSchema.validate(req.body);
+    // console.log(result);
+    if (error) {
+        let errMsg = error.details.map((el) => el.message).join(',');
+        throw new ExpressError(400, errMsg);
+    }
+    else {
+        next();
+    }
+};
 
 // Index Route
 app.get('/listings', wrapAsync(async (req, res) => {
@@ -41,15 +69,8 @@ app.get('/listings/new', wrapAsync(async (req, res) => {
 }));
 
 //create Route
-app.post('/listings', wrapAsync(async (req, res, next) => {
+app.post('/listings', validateListings, wrapAsync(async (req, res, next) => {
     let { title, description, image, price, location, country } = req.body;
-
-    let result=listingSchema.validate(req.body);
-    console.log(result);
-    if(result.error){
-        throw new ExpressError(400,req.error);
-    }
-
 
     let newListing = new Listing({
         title,
@@ -79,14 +100,11 @@ app.get('/listings/:id/edit', wrapAsync(async (req, res) => {
     res.render('listings/edit.ejs', { listing })
 }));
 
-app.put('/listings/:id', wrapAsync(async (req, res) => {
+app.put('/listings/:id', validateListings, wrapAsync(async (req, res) => {
     let { id } = req.params;
 
     let { title, description, image, price, location, country } = req.body;
 
-    if (!(req.body.title | req.body.description | req.body.price | req.body.location | req.body.country)) {
-        throw new ExpressError(400, "Send valid data for listings");
-    };
 
     await Listing.findByIdAndUpdate(
         id,
@@ -110,7 +128,7 @@ app.put('/listings/:id', wrapAsync(async (req, res) => {
 // Show Route
 app.get('/listings/:id', wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const List = await Listing.findById(id);
+    const List = await Listing.findById(id).populate('reviews');
     res.render('listings/show.ejs', { List });
 }));
 
@@ -119,6 +137,28 @@ app.delete('/listings/:id', wrapAsync(async (req, res) => {
     let { id } = req.params;
     const List = await Listing.findByIdAndDelete(id);
     res.redirect('/listings');
+}));
+
+// Reviews
+// Post Route
+app.post('/listings/:id/reviews', validateReview, wrapAsync(async (req, res) => {
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+    await newReview.save();
+    await listing.save();
+
+    res.redirect(`/listings/${listing._id}`);
+}))
+
+// Delete route
+app.delete('/listings/:id/reviews/:reviewId', wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+
+    res.redirect(`/listings/${id}`);
 }));
 
 // other routes
@@ -145,7 +185,7 @@ app.all("/{*splat}", (req, res, next) => {
 
 app.use((err, req, res, next) => {
     let { status = 500, message = "Something went wrong !!" } = err;
-    res.render('error.ejs', { message })
+    res.status(status).render('error.ejs', { message })
 });
 
 
