@@ -3,7 +3,6 @@ const Schema=mongoose.Schema;
 const Review = require('./review');
 
 
-
 const listingSchema = new mongoose.Schema({
     'title': {
         type: String,
@@ -13,12 +12,8 @@ const listingSchema = new mongoose.Schema({
         type: String,
     },
     'image': {
-        filename: String,
-        url: {
-            type: String,
-            set: (v) => v === "" ? "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHRyYXZlbHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60" : v,
-            default: "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHRyYXZlbHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60"
-        }
+        url: String,
+        filename: String
     },
     'price': {
         type: Number,
