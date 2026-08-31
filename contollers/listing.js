@@ -43,29 +43,32 @@ module.exports.updateListingForm = async (req, res) => {
     if (!listing) {
         req.flash('error', 'Listing you requested for does not exist !')
     }
-    res.render('listings/edit.ejs', { listing })
+
+    let originalImageUrl = listing.image.url;
+    originalImageUrl=originalImageUrl.replace('/upload','/upload/w_250')
+
+    res.render('listings/edit.ejs', { listing,originalImageUrl })
 };
 
 module.exports.updateListing = async (req, res) => {
     let { id } = req.params;
-    let { title, description, image, price, location, country } = req.body;
-    await Listing.findByIdAndUpdate(
-        id,
-        {
-            title,
-            description,
-            image: {
-                filename: "listingimage",
-                url: image
-            },
-            price,
-            location,
-            country
-        },
-        { runValidators: true }
-    );
-    req.flash('success', 'Listing updated!');
+    let { title, description, price, location, country } = req.body;
 
+    let listing = await Listing.findByIdAndUpdate(
+        id,
+        { title, description, price, location, country },
+        { runValidators: true, new: true }
+    );
+
+    // update image only if a new file was uploaded
+    if (req.file) {
+        let url = req.file.path;
+        let filename = req.file.filename;
+        listing.image = { url, filename };
+        await listing.save();
+    }
+
+    req.flash('success', 'Listing updated!');
     res.redirect(`/listings/${id}`);
 };
 

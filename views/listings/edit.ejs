@@ -5,7 +5,8 @@
 
             <h3>Edit Your Listing</h3>
 
-            <form method="POST" action="/listings/<%= listing._id %>?_method=PUT" novalidate>
+            <form method="POST" action="/listings/<%= listing._id %>?_method=PUT" novalidate class="needs-validation"
+                enctype="multipart/form-data">
 
                 <div class="mb-3">
                     <label for="title" class="form-label">Title</label>
@@ -27,9 +28,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="image" class="form-label">Image URL</label>
-                    <input type="text" name="image" placeholder="Enter your image URL" value="<%= listing.image.url %>"
-                        class="form-control" required />
+                    Original Listing Image <br>
+                    <img src="<%= originalImageUrl %>" alt="current_image" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px;" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="image" class="form-label">Upload New Image</label>
+                    <input type="file" name="image" class="form-control" />
                 </div>
 
                 <div class="row">
